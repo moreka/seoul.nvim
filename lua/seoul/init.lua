@@ -124,8 +124,9 @@ local palette = {
 
 -- Configuration
 M.config = {
-    style = vim.o.background or "dark",
-    darking_offset = 0,
+    style = nil,
+    dark_offset = 0,
+    light_offset = 0,
     palette = { light = palette.light, dark = palette.dark },
 }
 
@@ -135,28 +136,42 @@ function M.setup(opts)
     did_setup = true
     opts = opts or {}
 
-    local offset = opts.darking_offset or M.config.darking_offset
+    if opts.style == nil then
+        M.config.style = vim.o.background or "dark"
+    end
 
-    M.config.palette.dark.bg = grays[7 + offset]
-    M.config.palette.dark.bg_lighter = grays[7 + offset + 2]
-    M.config.palette.dark.bg_darker = grays[7 + offset - 2]
+    local d_offset = opts.dark_offset or M.config.dark_offset
+    local l_offset = opts.light_offset or M.config.light_offset
+
+    M.config.palette.dark.bg = grays[7 + d_offset]
+    M.config.palette.dark.bg_lighter = grays[7 + d_offset + 2]
+    M.config.palette.dark.bg_darker = grays[7 + d_offset - 2]
     M.config.palette.dark.fg = grays[22]
     M.config.palette.dark.fg_lighter = grays[22 + 2]
     M.config.palette.dark.fg_darker = grays[22 - 2]
 
-    M.config.palette.light.bg = grays[23 + offset]
-    M.config.palette.light.bg_lighter = grays[23 + offset + 3]
-    M.config.palette.light.bg_darker = grays[23 + offset - 1]
-    M.config.palette.light.fg = grays[9]
-    M.config.palette.light.fg_lighter = grays[4]
+    M.config.palette.light.bg = grays[23 + l_offset]
+    M.config.palette.light.bg_lighter = grays[23 + l_offset + 3]
+    M.config.palette.light.bg_darker = grays[23 + l_offset - 1]
+    M.config.palette.light.fg = grays[4]
+    M.config.palette.light.fg_lighter = grays[9]
     M.config.palette.light.fg_darker = grays[11]
 
     M.config = vim.tbl_deep_extend("force", M.config, opts)
+
+    local grp = vim.api.nvim_create_augroup("seoul-color-group", {})
+    vim.api.nvim_create_autocmd("OptionSet", {
+        pattern = "background",
+        group = grp,
+        callback = function()
+            if vim.v.option_old == vim.v.option_new then return end
+            M.config.style = vim.v.option_new
+            M.load()
+        end,
+    })
 end
 
-local function hi(group, opts)
-    vim.api.nvim_set_hl(0, group, opts)
-end
+local function hi(group, opts) vim.api.nvim_set_hl(0, group, opts) end
 
 function M.load()
     if not did_setup then
@@ -190,6 +205,7 @@ function M.load()
     hi("MatchParen", { fg = colors.yellow_bright, bg = colors.selection, bold = true })
     hi("ModeMsg", { fg = colors.orange })
     hi("MoreMsg", { fg = colors.orange })
+    hi("MsgSeparator", { fg = colors.orange, bg = colors.bg })
     hi("NonText", { fg = colors.comment })
     hi("Pmenu", { fg = colors.fg, bg = colors.pmenu_bg })
     hi("PmenuSel", { fg = colors.fg, bg = colors.pmenu_sel })
@@ -231,16 +247,16 @@ function M.load()
     hi("Keyword", { fg = colors.blue })
     hi("Exception", { fg = colors.blue })
     hi("PreProc", { fg = colors.cyan })
-    hi("Include", { fg = colors.cyan })
-    hi("Define", { fg = colors.cyan })
-    hi("Macro", { fg = colors.cyan })
-    hi("PreCondit", { fg = colors.cyan })
+    hi("Include", { link = "PreProc" })
+    hi("Define", { link = "PreProc" })
+    hi("Macro", { link = "PreProc" })
+    hi("PreCondit", { link = "PreProc" })
     hi("Type", { fg = colors.yellow })
-    hi("StorageClass", { fg = colors.yellow })
-    hi("Structure", { fg = colors.yellow })
-    hi("Typedef", { fg = colors.yellow })
+    hi("StorageClass", { link = "Type" })
+    hi("Structure", { link = "Type" })
+    hi("Typedef", { link = "Type" })
     hi("Special", { fg = colors.red })
-    hi("SpecialChar", { fg = colors.red })
+    hi("SpecialChar", { link = "Special" })
     hi("Tag", { fg = colors.blue })
     hi("Delimiter", { fg = colors.fg })
     hi("SpecialComment", { fg = colors.comment, bold = true })
@@ -251,47 +267,24 @@ function M.load()
     hi("Todo", { fg = colors.yellow, bg = colors.bg_darker, bold = true })
 
     -- Treesitter
-    hi("@variable", { fg = colors.fg })
+    hi("@variable", { link = "Identifier" })
     hi("@variable.builtin", { fg = colors.purple })
-    hi("@variable.parameter", { fg = colors.fg })
-    hi("@variable.member", { fg = colors.fg })
-    hi("@constant", { fg = colors.orange })
+    hi("@variable.parameter", { link = "Identifier" })
+    hi("@variable.member", { link = "Identifier" })
     hi("@constant.builtin", { fg = colors.purple })
-    hi("@module", { fg = colors.cyan })
-    hi("@label", { fg = colors.blue })
-    hi("@string", { fg = colors.green })
-    hi("@string.escape", { fg = colors.red })
-    hi("@string.special", { fg = colors.red })
-    hi("@character", { fg = colors.green })
-    hi("@number", { fg = colors.purple })
-    hi("@boolean", { fg = colors.purple })
-    hi("@float", { fg = colors.purple })
-    hi("@function", { fg = colors.yellow })
-    hi("@function.builtin", { fg = colors.yellow })
-    hi("@function.macro", { fg = colors.cyan })
-    hi("@function.method", { fg = colors.yellow })
-    hi("@constructor", { fg = colors.yellow })
-    hi("@keyword", { fg = colors.blue })
-    hi("@keyword.function", { fg = colors.blue })
-    hi("@keyword.operator", { fg = colors.blue })
-    hi("@keyword.return", { fg = colors.blue })
-    hi("@conditional", { fg = colors.blue })
-    hi("@repeat", { fg = colors.blue })
-    hi("@exception", { fg = colors.blue })
-    hi("@operator", { fg = colors.cyan_bright })
-    hi("@preproc", { fg = colors.cyan })
-    hi("@include", { fg = colors.cyan })
-    hi("@type", { fg = colors.yellow })
-    hi("@type.builtin", { fg = colors.yellow })
-    hi("@attribute", { fg = colors.cyan })
-    hi("@property", { fg = colors.fg })
-    hi("@tag", { fg = colors.blue })
+    hi("@module", { link = "PreProc" })
+    hi("@function.builtin", { link = "Function" })
+    hi("@function.macro", { link = "Macro" })
+    hi("@function.method", { link = "Function" })
+    hi("@constructor", { link = "Function" })
+    hi("@keyword.function", { link = "Function" })
+    hi("@keyword.operator", { link = "Function" })
+    hi("@keyword.return", { link = "Function" })
+    hi("@type.builtin", { link = "Type" })
     hi("@tag.attribute", { fg = colors.yellow })
     hi("@tag.delimiter", { fg = colors.fg })
-    hi("@comment", { link = "Comment" })
     hi("@punctuation.delimiter", { fg = colors.fg })
     hi("@punctuation.bracket", { fg = colors.fg })
-    hi("@punctuation.special", { fg = colors.red })
 
     -- LSP
     hi("DiagnosticError", { fg = colors.error })
@@ -303,28 +296,9 @@ function M.load()
     hi("DiagnosticUnderlineInfo", { sp = colors.info, undercurl = true })
     hi("DiagnosticUnderlineHint", { sp = colors.hint, undercurl = true })
 
-    -- Git signs
-    hi("GitSignsAdd", { fg = colors.git_add })
-    hi("GitSignsChange", { fg = colors.git_change })
-    hi("GitSignsDelete", { fg = colors.git_delete })
-
-    -- Telescope
-    hi("TelescopeNormal", { fg = colors.fg, bg = colors.bg })
-    hi("TelescopeBorder", { fg = colors.comment, bg = colors.bg })
-    hi("TelescopePromptBorder", { fg = colors.blue, bg = colors.bg })
-    hi("TelescopeSelection", { fg = colors.fg, bg = colors.selection })
-    hi("TelescopeMatching", { fg = colors.yellow, bold = true })
-
-    -- NvimTree
-    hi("NvimTreeNormal", { fg = colors.fg, bg = colors.bg })
-    hi("NvimTreeFolderName", { fg = colors.blue })
-    hi("NvimTreeFolderIcon", { fg = colors.blue })
-    hi("NvimTreeOpenedFolderName", { fg = colors.blue, bold = true })
-    hi("NvimTreeRootFolder", { fg = colors.purple, bold = true })
-    hi("NvimTreeSpecialFile", { fg = colors.yellow })
-    hi("NvimTreeGitDirty", { fg = colors.git_change })
-    hi("NvimTreeGitNew", { fg = colors.git_add })
-    hi("NvimTreeGitDeleted", { fg = colors.git_delete })
+    -- Snacks
+    hi("SnacksPickerTitle", { fg = colors.gold, bg = colors.bg_lighter })
+    hi("SnacksPickerPrompt", { fg = colors.red, bg = colors.bg_lighter })
 
     -- Terminal colors
     vim.g.terminal_color_0 = colors.black

@@ -11,10 +11,7 @@ The background and foreground are adjusted to give better contrast.
 - **Comprehensive syntax highlighting** with modern plugin support:
   - Treesitter highlighting for all major languages
   - LSP diagnostics integration
-  - Git signs (GitSigns)
-  - Telescope fuzzy finder
-  - NvimTree file explorer
-- **Customizable background darkness** via `darking_offset` option
+- **Customizable background darkness** via `dark_offset` and `light_offset` options
 - **Terminal colors** properly configured for integrated terminal
 - **Custom palette override** support for fine-grained color control
 
@@ -60,9 +57,13 @@ For custom configuration, call `setup()` before setting the colorscheme:
 
 ```lua
 require("seoul").setup({
-    -- Adjust background darkness (default: 0)
+    -- Adjust background for dark colorscheme (default: 0)
     -- Range: -4 to +4 (negative = darker, positive = lighter)
-    darking_offset = 0,
+    dark_offset = 0,
+
+    -- Adjust background for light colorscheme (default: 0)
+    -- Range: -4 to +4 (negative = darker, positive = lighter)
+    light_offset = 0,
 
     -- Override palette colors (optional)
     palette = {
@@ -79,24 +80,6 @@ require("seoul").setup({
 vim.o.background = "dark"
 vim.cmd.colorscheme("seoul")
 ```
-
-### Background Darkness Adjustment
-
-The `darking_offset` option allows you to adjust the background darkness:
-
-```lua
-require("seoul").setup({
-    darking_offset = -2,  -- Darker background
-})
-
--- or
-
-require("seoul").setup({
-    darking_offset = 2,   -- Lighter background
-})
-```
-
-Valid range is approximately -4 to +4, with 0 being the default.
 
 ## Requirements
 
