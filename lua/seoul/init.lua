@@ -128,57 +128,57 @@ M.config = {
     dark_offset = 0,
     light_offset = 0,
     palette = { light = palette.light, dark = palette.dark },
+    tuning = { dark = nil, light = nil },
 }
 
-local did_setup = false
+M.augroup = vim.api.nvim_create_augroup("seoul-color-group", { clear = true })
+
+M.did_setup = false
 
 function M.setup(opts)
-    did_setup = true
-    opts = opts or {}
-
-    if opts.style == nil then
-        M.config.style = vim.o.background or "dark"
+    if M.did_setup then
+        return
     end
 
-    local d_offset = opts.dark_offset or M.config.dark_offset
-    local l_offset = opts.light_offset or M.config.light_offset
-
-    M.config.palette.dark.bg = grays[7 + d_offset]
-    M.config.palette.dark.bg_lighter = grays[7 + d_offset + 2]
-    M.config.palette.dark.bg_darker = grays[7 + d_offset - 2]
-    M.config.palette.dark.fg = grays[22]
-    M.config.palette.dark.fg_lighter = grays[22 + 2]
-    M.config.palette.dark.fg_darker = grays[22 - 2]
-
-    M.config.palette.light.bg = grays[23 + l_offset]
-    M.config.palette.light.bg_lighter = grays[23 + l_offset + 3]
-    M.config.palette.light.bg_darker = grays[23 + l_offset - 1]
-    M.config.palette.light.fg = grays[4]
-    M.config.palette.light.fg_lighter = grays[9]
-    M.config.palette.light.fg_darker = grays[11]
+    M.did_setup = true
+    opts = opts or {}
 
     M.config = vim.tbl_deep_extend("force", M.config, opts)
-
-    local grp = vim.api.nvim_create_augroup("seoul-color-group", {})
-    vim.api.nvim_create_autocmd("OptionSet", {
-        pattern = "background",
-        group = grp,
-        callback = function()
-            if vim.v.option_old == vim.v.option_new then return end
-            M.config.style = vim.v.option_new
-            M.load()
-        end,
-    })
 end
 
 local function hi(group, opts) vim.api.nvim_set_hl(0, group, opts) end
 
-function M.load()
-    if not did_setup then
+function M.load(bg)
+    if not M.did_setup then
         M.setup()
     end
 
-    local colors = M.config.style == "light" and M.config.palette.light or M.config.palette.dark
+    local d_offset = M.config.dark_offset
+    local l_offset = M.config.light_offset
+
+    local fd = M.config.tuning.dark or function(c) return c end
+    local fl = M.config.tuning.light or function(c) return c end
+
+    M.config.palette.dark.bg = fd(grays[7 + d_offset])
+    M.config.palette.dark.bg_lighter = fd(grays[7 + d_offset + 2])
+    M.config.palette.dark.bg_darker = fd(grays[7 + d_offset - 2])
+    M.config.palette.dark.fg = grays[22]
+    M.config.palette.dark.fg_lighter = grays[22 + 2]
+    M.config.palette.dark.fg_darker = grays[22 - 2]
+
+    M.config.palette.light.bg = fl(grays[23 + l_offset])
+    M.config.palette.light.bg_lighter = fl(grays[23 + l_offset + 3])
+    M.config.palette.light.bg_darker = fl(grays[23 + l_offset - 1])
+    M.config.palette.light.fg = grays[4]
+    M.config.palette.light.fg_lighter = grays[9]
+    M.config.palette.light.fg_darker = grays[11]
+
+    local style = bg or (M.config.style or vim.o.background)
+    if style ~= vim.o.background then
+        vim.o.background = style
+    end
+
+    local colors = style == "light" and M.config.palette.light or M.config.palette.dark
 
     -- Editor highlights
     hi("Normal", { fg = colors.fg, bg = colors.bg })
@@ -317,6 +317,18 @@ function M.load()
     vim.g.terminal_color_13 = colors.purple
     vim.g.terminal_color_14 = colors.cyan
     vim.g.terminal_color_15 = colors.fg
+
+    vim.api.nvim_clear_autocmds({ group = M.augroup })
+    vim.api.nvim_create_autocmd("OptionSet", {
+        pattern = "background",
+        group = M.augroup,
+        callback = function()
+            if vim.v.option_old == vim.v.option_new then
+                return
+            end
+            M.load(vim.v.option_new)
+        end,
+    })
 end
 
 return M

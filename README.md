@@ -65,6 +65,12 @@ require("seoul").setup({
     -- Range: -4 to +4 (negative = darker, positive = lighter)
     light_offset = 0,
 
+    -- Use some function to change the different background colors (e.g., blend them with another color)
+    tuning = {
+        dark = function(c) return c end,
+        light = function(c) return c end,
+    }
+
     -- Override palette colors (optional)
     palette = {
         dark = {
@@ -80,6 +86,19 @@ require("seoul").setup({
 vim.o.background = "dark"
 vim.cmd.colorscheme("seoul")
 ```
+
+An example for tuning the colors is the following:
+```lua
+require("seoul").setup({
+    ...
+    tuning = {
+        light = function(c) return require("seoul.util").blend_keep_lum(c, "#f5eee6", 0.4) end,
+    },
+    ...
+})
+```
+
+See [util.lua](./lua/seoul/util.lua) for some other helper functions.
 
 ## Requirements
 
